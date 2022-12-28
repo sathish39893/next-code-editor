@@ -1,6 +1,11 @@
 {
   "name": "next-code-editor",
   "version": "0.1.0",
+  "author": {
+    "name": "Sathish Panthagani",
+    "email": "sathish39893@gmail.com",
+    "url": "https://github.com/sathish39893"
+  },
   "private": true,
   "scripts": {
     "dev": "next dev",
