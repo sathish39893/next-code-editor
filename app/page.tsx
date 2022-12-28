@@ -1,91 +1,89 @@
-import Image from 'next/image'
-import { Inter } from '@next/font/google'
-import styles from './page.module.css'
+'use client';
+import { useState } from 'react';
+import { Inter } from '@next/font/google';
+import styles from './page.module.css';
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({
+  weight: ['400', '700'],
+  style: ['normal'],
+  subsets: ['latin'],
+});
 
+const languageList = [
+  { id: 1, name: 'C++', value: 'cpp' },
+  { id: 2, name: 'Python', value: 'py' },
+];
 export default function Home() {
+  const [lang, setLang] = useState('py');
+  const [code, setCode] = useState('print("hello world");');
+  const [output, setOutput] = useState('');
+
+  const handleSubmit = async () => {
+    console.log('handleSubmit', lang, code);
+    const response = await fetch(`/api/code-compiler`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        lang,
+        code,
+      }),
+    });
+    const output = await response.json();
+    setOutput(output.output);
+  };
   return (
     <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      <div className={inter.className}>
+        <h1>Code Compiler</h1>
+      </div>
+      <div className={inter.className}>
+        <div className={styles.field}>
+          <label htmlFor="language" className={styles.label}>
+            Language
+          </label>
+          <select
+            id="language"
+            name="language"
+            className={styles.select}
+            value={lang}
+            onChange={(e) => setLang(e.target.value)}
           >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+            {languageList.map(({ id, value, name }) => (
+              <option key={id} value={value}>
+                {name}
+              </option>
+            ))}
+          </select>
         </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-        <div className={styles.thirteen}>
-          <Image src="/thirteen.svg" alt="13" width={40} height={31} priority />
+        <div className={styles.field}>
+          <label htmlFor="code" className={styles.label}>
+            Code
+          </label>
+          <div className="mt-1">
+            <textarea
+              name="code"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              rows={10}
+              cols={50}
+              className={styles.code}
+              placeholder="add script here"
+            ></textarea>
+          </div>
         </div>
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://beta.nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>Explore the Next.js 13 playground.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+        <div className={styles.field}>
+          <button className={styles.button} onClick={handleSubmit}>
+            Submit
+          </button>
+        </div>
+        <div className={styles.field}>
+          <label className={styles.label}>Output:</label>
+          <div className={styles.output}>{output}</div>
+        </div>
       </div>
     </main>
-  )
+  );
 }
