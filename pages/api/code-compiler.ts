@@ -24,15 +24,45 @@ const generateFile = async (format: string, content: string) => {
   return filePath;
 };
 
-const executeFilePy = (fileName: string) => {
+const executeCppFile = (filePath: string) => {
+  const jobId = path.basename(filePath).split('.')[0];
+  const outputDir = path.join(__dirname, 'output');
+  if (!fs.existsSync(outputDir)) {
+    fs.mkdirSync(outputDir, { recursive: true });
+  }
+
+  const outputFile = path.join(outputDir, `${jobId}.out`);
+
   return new Promise((resolve, reject) => {
-    exec(`python3 ${fileName}`, (error, stdout, stderr) => {
-      error && reject({ error, stderr });
-      stderr && reject(stderr);
+    exec(
+      `g++ ${filePath} -o ${outputFile} && cd ${outputDir} && ./${jobId}.out -v`,
+      (error, stdout, stderr) => {
+        error && reject({ error, error_message: stderr });
+        stderr && reject({ error_message: stderr });
+        resolve(stdout);
+      }
+    );
+  });
+};
+
+const executePyFile = (filePath: string) => {
+  return new Promise((resolve, reject) => {
+    exec(`python3 ${filePath}`, (error, stdout, stderr) => {
+      error && reject({ error, error_message: stderr });
+      stderr && reject({ error_message: stderr });
       resolve(stdout);
     });
   });
 };
+
+const executeCodeFile = async (lang: string, filePath: string) => {
+  if (lang === 'cpp') {
+    return await executeCppFile(filePath);
+  } else if (lang === 'py') {
+    return await executePyFile(filePath);
+  }
+};
+
 const post = async (
   req: NextApiRequest,
   res: NextApiResponse<Data | ErrorBlock | any>
@@ -42,15 +72,15 @@ const post = async (
     if (!code) {
       res.status(400).json({ error_message: 'empty code' });
     }
-    if (lang === 'py') {
+    if (lang === 'py' || lang === 'cpp') {
       const filepath = await generateFile(lang, code);
-      const output = await executeFilePy(filepath);
+      const output = await executeCodeFile(lang, filepath);
       res.status(200).json({ output: output });
     } else {
-      res.status(501).json({ error_message: 'unknown language' });
+      res.status(501).json({ error_message: 'Unknown language' });
     }
   } catch (err) {
-    return res.status(500).json({ err });
+    res.status(500).json(err);
   }
 };
 

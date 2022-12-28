@@ -13,13 +13,22 @@ const languageList = [
   { id: 1, name: 'C++', value: 'cpp' },
   { id: 2, name: 'Python', value: 'py' },
 ];
+
+const defaultCppProgram = `#include <stdio.h>
+#include <iostream>
+
+int main() {
+printf("Hello world! from C++");
+return 0;
+}`;
+
+const defaultPyProgram = 'print("Hello world! from python");';
 export default function Home() {
   const [lang, setLang] = useState('py');
-  const [code, setCode] = useState('print("hello world");');
+  const [code, setCode] = useState(defaultPyProgram);
   const [output, setOutput] = useState('');
 
   const handleSubmit = async () => {
-    console.log('handleSubmit', lang, code);
     const response = await fetch(`/api/code-compiler`, {
       method: 'POST',
       headers: {
@@ -31,13 +40,23 @@ export default function Home() {
         code,
       }),
     });
-    const output = await response.json();
-    setOutput(output.output);
+    try {
+      const data = await response.json();
+      const { error_message, output } = data;
+      if (error_message) {
+        const errorList = error_message.split(',');
+        setOutput(errorList[errorList.length - 1]);
+      } else {
+        setOutput(output);
+      }
+    } catch (err) {
+      setOutput(JSON.stringify(err));
+    }
   };
   return (
     <main className={styles.main}>
       <div className={inter.className}>
-        <h1>Code Compiler</h1>
+        <h1>Online Code Compiler</h1>
       </div>
       <div className={inter.className}>
         <div className={styles.field}>
@@ -49,7 +68,16 @@ export default function Home() {
             name="language"
             className={styles.select}
             value={lang}
-            onChange={(e) => setLang(e.target.value)}
+            onChange={(e) => {
+              setLang(e.target.value);
+              if (e.target.value === 'cpp') {
+                setCode(defaultCppProgram);
+              } else if (e.target.value === 'py') {
+                setCode(defaultPyProgram);
+              } else {
+                setCode('');
+              }
+            }}
           >
             {languageList.map(({ id, value, name }) => (
               <option key={id} value={value}>
@@ -62,13 +90,13 @@ export default function Home() {
           <label htmlFor="code" className={styles.label}>
             Code
           </label>
-          <div className="mt-1">
+          <div>
             <textarea
               name="code"
               value={code}
               onChange={(e) => setCode(e.target.value)}
               rows={10}
-              cols={50}
+              cols={100}
               className={styles.code}
               placeholder="add script here"
             ></textarea>
@@ -81,7 +109,15 @@ export default function Home() {
         </div>
         <div className={styles.field}>
           <label className={styles.label}>Output:</label>
-          <div className={styles.output}>{output}</div>
+          <div>
+            <textarea
+              className={styles.output}
+              value={output}
+              rows={10}
+              cols={10}
+              disabled
+            ></textarea>
+          </div>
         </div>
       </div>
     </main>
